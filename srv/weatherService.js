@@ -75,22 +75,23 @@ async function getWeather(conn_parms, conn, city) {
         weatherConditionMain: openWeatherJson.weather[0].main,
         weatherConditionDescription: openWeatherJson.weather[0].description,
         temperature: openWeatherJson.main.temp,
-        sourceUpdate: moment(new Date(openWeatherJson.dt * 1000)).format("YYYY/MM/DD hh:mm:ss"),
+        //sourceUpdate: moment(new Date(openWeatherJson.dt * 1000)).format("YYYY/MM/DD hh:mm:ss"),
+        sourceUpdate: convertTimestamp(new Date(openWeatherJson.dt*1000)),
 
     };
 }
-
 
 async function insertWeather(conn_parms, conn, weatherResult) {
     conn.connect(conn_parms);
     conn.exec("SET 'TIMESTAMP_FORMAT' = 'YYYY/MM/DD HH:MI:SS'")
     var execArray = [];
+    var currentTimestamp = convertTimestamp(new Date());
+
     for (var i = 0; i < weatherResult.length; i++) {
         var id = uuidv4().toString();
         const weatherData = await getWeather(conn_parms, conn, weatherResult[i]);
-        var sqlWeather = `UPSERT WEATHERBYPOSTALCODE VALUES('${id}', ${weatherData.postalCode}, ${weatherData.weatherConditionID}, ${weatherData.temperature}, '${weatherData.sourceUpdate}') WHERE POSTALCODE = ${weatherData.postalCode} AND SOURCEUPDATE = '${weatherData.sourceUpdate}'`;
+        var sqlWeather = `UPSERT WEATHERBYPOSTALCODE VALUES('${id}', ${weatherData.postalCode}, ${weatherData.weatherConditionID}, ${weatherData.temperature}, '${weatherData.sourceUpdate}', '${currentTimestamp}') WHERE POSTALCODE = ${weatherData.postalCode} AND SOURCEUPDATE = '${weatherData.sourceUpdate}'`;
         var sqlConditions = `UPSERT WEATHERCONDITIONS VALUES(${weatherData.weatherConditionID}, '${weatherData.weatherConditionMain}', '${weatherData.weatherConditionDescription}') WITH PRIMARY KEY`;
-        console.log("i = " + i)
         execArray.push(sqlExec(sqlWeather, conn));
         execArray.push(sqlExec(sqlConditions, conn));
     }
@@ -104,4 +105,15 @@ async function sqlExec(sqlStatement, conn) {
         resolve(affectedRows);
         });
     });
+}
+
+function convertTimestamp(inputTimestamp) {
+    let date = ("0" + inputTimestamp.getDate()).slice(-2);
+    let month = ("0" + (inputTimestamp.getMonth() + 1)).slice(-2);
+    let year = inputTimestamp.getFullYear();
+    let hours = `${inputTimestamp.getHours()}`.padStart(2, '0')
+    let minutes = `${inputTimestamp.getMinutes()}`.padStart(2, '0')
+    let seconds = `${inputTimestamp.getSeconds()}`.padStart(2, '0')
+    var currentTimestamp = year + "/" + month + "/" + date + " " + hours + ":" + minutes + ":" + seconds;
+    return currentTimestamp;
 }
