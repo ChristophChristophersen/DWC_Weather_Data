@@ -1,0 +1,35 @@
+{
+  "definitions": {
+    "weatherService": {
+      "kind": "service",
+      "@source": "srv/weatherService.cds"
+    },
+    "weatherService.__return_weatherService_fetchCurrentWeatherData": {
+      "kind": "type",
+      "@cds.persistence.name": "WEATHERSERVICE___RETURN_WEATHERSERVICE_FETCHCURRENTWEATHERDATA",
+      "elements": {
+        "deferred": {
+          "@cds.persistence.name": "DEFERRED",
+          "type": "cds.String"
+        }
+      }
+    },
+    "weatherService.fetchCurrentWeatherData": {
+      "kind": "function",
+      "returns": {
+        "type": "weatherService.__return_weatherService_fetchCurrentWeatherData",
+        "elements": {
+          "deferred": {
+            "@cds.persistence.name": "DEFERRED",
+            "type": "cds.String"
+          }
+        }
+      }
+    }
+  },
+  "meta": {
+    "creator": "CDS Compiler v1.21.1"
+  },
+  "$version": "1.0",
+  "@sql_mapping": "plain"
+}
