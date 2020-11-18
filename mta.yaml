@@ -28,6 +28,7 @@ modules:
         srv-url: ${default-url}
    requires:
     - name: apiDemo-xsuaa
+    - name: dwc-weather-data-space
 resources:
   - name: apiDemo-xsuaa
     type: org.cloudfoundry.managed-service
@@ -35,3 +36,7 @@ resources:
       path: ./xs-security.json
       service: xsuaa
       service-plan: application
+  - name: dwc-weather-data-space
+    type: org.cloudfoundry.existing-service
+    parameters: 
+      service-name: dwc-weather-data-space

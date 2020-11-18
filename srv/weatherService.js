@@ -22,14 +22,23 @@ const config = {
     "keepLatest": 7
 };
 
+const getVcapService = (serviceName, scope = 'user-provided') => JSON.parse(process.env.VCAP_SERVICES)[scope].filter((e) => e.name === serviceName);
+const dwc_access = getVcapService('dwc-weather-data-space')[0].credentials;
+
 async function _fetchCurrentWeatherData(req) {
     const hana = require('@sap/hana-client');
     var conn = hana.createConnection();
     var conn_parms = {
+    /*
         serverNode: "cc622444-1db2-4dd0-8cbe-71521705c697.hana.prod-eu10.hanacloud.ondemand.com:443",
         encrypt: true,
         uid: "WEATHERDATA#MASTER",
         pwd: "OKH(Ba(#aWYH9eA<",
+    */
+        serverNode: dwc_access.host_and_port,
+        encrypt: true,
+        uid: dwc_access.user,
+        pwd: dwc_access.password,
     };
     /*
     conn.connect(conn_parms);
