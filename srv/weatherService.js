@@ -3,47 +3,24 @@ module.exports = cds.service.impl(srv => {
 })
 
 const fetch = require('node-fetch');
-const { v4: uuidv4 } = require('uuid');
-const moment = require('moment');
-const { array } = require('@sap/cds');
-
-const config = {
-    "url": "http://api.openweathermap.org/data/2.5/weather?q=%s,%c&appid=%k&units=metric",
-    "keys": {
-        "ondemand": "2360f5ae4148bdc6a326ea8e31faae0d",
-        "crawler": [
-            "2360f5ae4148bdc6a326ea8e31faae0d"
-        ]
-    },
-    "limit": false,
-    "timeout": 1000,
-    "secret": "",
-    "cleanOutdated": true,
-    "keepLatest": 7
-};
 
 const getVcapService = (serviceName, scope = 'user-provided') => JSON.parse(process.env.VCAP_SERVICES)[scope].filter((e) => e.name === serviceName);
-const dwc_access = getVcapService('dwc-weather-data-space')[0].credentials;
+const weatherApiConfig = getVcapService('open-weather-map')[0].credentials;
+const dwcAccess = getVcapService('dwc-weather-data-space')[0].credentials;
 
 async function _fetchCurrentWeatherData(req) {
     const hana = require('@sap/hana-client');
     var conn = hana.createConnection();
     var conn_parms = {
-    /*
-        serverNode: "cc622444-1db2-4dd0-8cbe-71521705c697.hana.prod-eu10.hanacloud.ondemand.com:443",
+        serverNode: dwcAccess.host_and_port,
         encrypt: true,
-        uid: "WEATHERDATA#MASTER",
-        pwd: "OKH(Ba(#aWYH9eA<",
-    */
-        serverNode: dwc_access.host_and_port,
-        encrypt: true,
-        uid: dwc_access.user,
-        pwd: dwc_access.password,
+        uid: dwcAccess.user,
+        pwd: dwcAccess.password,
     };
     /*
     conn.connect(conn_parms);
     try {
-        conn.exec('CREATE TABLE WEATHERBYPOSTALCODE(ID NVARCHAR(50), POSTALCODE NVARCHAR(10), WEATHERCONDITIONSID Integer, TEMPERATURE Double, SOURCEUPDATE Timestamp, PRIMARY KEY (ID))');
+        conn.exec('CREATE TABLE WEATHERBYPOSTALCODE(POSTALCODE NVARCHAR(10), WEATHERCONDITIONSID Integer, TEMPERATURE Double, SOURCEUPDATE Timestamp, PRIMARY KEY (POSTALCODE, SOURCEUPDATE))');
     } catch (error) {
         console.log("Table WEATHERBYPOSTALCODE already exists");
     }
@@ -69,9 +46,9 @@ async function selectCities(conn_parms, conn) {
 
 // get weather for a city (ZIP code + country code) via OpenWeatherMap API
 async function getWeather(conn_parms, conn, city) {
-    var key = config.keys.crawler[0];
+    var key = weatherApiConfig.keys.crawler[0];
     console.log(city);
-    const url = config.url.replace(/%s/g, encodeURI(`${city.Postalcode}`)).replace(/%c/g, encodeURI(`${city.Country}`))
+    const url = weatherApiConfig.url.replace(/%s/g, encodeURI(`${city.Postalcode}`)).replace(/%c/g, encodeURI(`${city.Country}`))
         .replace(/%k/g, encodeURI(key));
 
     const response = await fetch(url);
@@ -84,7 +61,6 @@ async function getWeather(conn_parms, conn, city) {
         weatherConditionMain: openWeatherJson.weather[0].main,
         weatherConditionDescription: openWeatherJson.weather[0].description,
         temperature: openWeatherJson.main.temp,
-        //sourceUpdate: moment(new Date(openWeatherJson.dt * 1000)).format("YYYY/MM/DD hh:mm:ss"),
         sourceUpdate: convertTimestamp(new Date(openWeatherJson.dt*1000)),
 
     };
@@ -97,9 +73,8 @@ async function insertWeather(conn_parms, conn, weatherResult) {
     var currentTimestamp = convertTimestamp(new Date());
 
     for (var i = 0; i < weatherResult.length; i++) {
-        var id = uuidv4().toString();
         const weatherData = await getWeather(conn_parms, conn, weatherResult[i]);
-        var sqlWeather = `UPSERT WEATHERBYPOSTALCODE VALUES('${id}', ${weatherData.postalCode}, ${weatherData.weatherConditionID}, ${weatherData.temperature}, '${weatherData.sourceUpdate}', '${currentTimestamp}') WHERE POSTALCODE = ${weatherData.postalCode} AND SOURCEUPDATE = '${weatherData.sourceUpdate}'`;
+        var sqlWeather = `UPSERT WEATHERBYPOSTALCODE VALUES(${weatherData.postalCode}, ${weatherData.weatherConditionID}, ${weatherData.temperature}, '${weatherData.sourceUpdate}', '${currentTimestamp}') WITH PRIMARY KEY`;
         var sqlConditions = `UPSERT WEATHERCONDITIONS VALUES(${weatherData.weatherConditionID}, '${weatherData.weatherConditionMain}', '${weatherData.weatherConditionDescription}') WITH PRIMARY KEY`;
         execArray.push(sqlExec(sqlWeather, conn));
         execArray.push(sqlExec(sqlConditions, conn));
