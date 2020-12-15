@@ -1,9 +1,9 @@
 ## Generated mta.yaml based on template version 0.4.0
-## appName = apiDemo
+## appName = weatherApiDemo
 ## language=nodejs; multiTenant=false
 ## approuter=
 _schema-version: '3.1'
-ID: apiDemo
+ID: weatherApiDemo
 version: 1.0.0
 description: "A service to get weather data for city data (source: DWC) from openWeatherMap and insert it into the DWC"
 parameters:
@@ -18,7 +18,7 @@ build-parameters:
 
 modules:
  # --------------------- SERVICE MODULE ------------------------
- - name: apiDemo-srv
+ - name: weatherApiDemo-srv
  # ------------------------------------------------------------
    type: nodejs
    path: gen/srv
@@ -27,11 +27,11 @@ modules:
       properties:
         srv-url: ${default-url}
    requires:
-    - name: apiDemo-xsuaa
+    - name: weatherApiDemo-xsuaa
     - name: dwc-weather-data-space
     - name: open-weather-map
 resources:
-  - name: apiDemo-xsuaa
+  - name: weatherApiDemo-xsuaa
     type: org.cloudfoundry.managed-service
     parameters:
       path: ./xs-security.json

@@ -38,7 +38,7 @@ async function _fetchCurrentWeatherData(req) {
 
 async function selectCities(conn_parms, conn) {
     conn.connect(conn_parms);
-    var result = await conn.exec('SELECT * FROM "WEATHERDATA"."Relevant_Cities_for_API"');
+    var result = await conn.exec('SELECT * FROM "' + dwcAccess.schema + '"."Relevant_Cities_for_API"');
     console.log(result.length + " relevant cities in source table");
     conn.disconnect();
     return result;
@@ -74,8 +74,8 @@ async function insertWeather(conn_parms, conn, weatherResult) {
 
     for (var i = 0; i < weatherResult.length; i++) {
         const weatherData = await getWeather(conn_parms, conn, weatherResult[i]);
-        var sqlWeather = `UPSERT WEATHERBYPOSTALCODE VALUES(${weatherData.postalCode}, ${weatherData.weatherConditionID}, ${weatherData.temperature}, '${weatherData.sourceUpdate}', '${currentTimestamp}') WITH PRIMARY KEY`;
-        var sqlConditions = `UPSERT WEATHERCONDITIONS VALUES(${weatherData.weatherConditionID}, '${weatherData.weatherConditionMain}', '${weatherData.weatherConditionDescription}') WITH PRIMARY KEY`;
+        var sqlWeather = `UPSERT API_WEATHERBYPOSTALCODE VALUES(${weatherData.postalCode}, ${weatherData.weatherConditionID}, ${weatherData.temperature}, '${weatherData.sourceUpdate}', '${currentTimestamp}') WITH PRIMARY KEY`;
+        var sqlConditions = `UPSERT API_WEATHERCONDITIONS VALUES(${weatherData.weatherConditionID}, '${weatherData.weatherConditionMain}', '${weatherData.weatherConditionDescription}') WITH PRIMARY KEY`;
         execArray.push(sqlExec(sqlWeather, conn));
         execArray.push(sqlExec(sqlConditions, conn));
     }
