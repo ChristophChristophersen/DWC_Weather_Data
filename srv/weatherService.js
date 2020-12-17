@@ -17,21 +17,7 @@ async function _fetchCurrentWeatherData(req) {
         uid: dwcAccess.user,
         pwd: dwcAccess.password,
     };
-    /*
-    conn.connect(conn_parms);
-    try {
-        conn.exec('CREATE TABLE WEATHERBYPOSTALCODE(POSTALCODE NVARCHAR(10), WEATHERCONDITIONSID Integer, TEMPERATURE Double, SOURCEUPDATE Timestamp, PRIMARY KEY (POSTALCODE, SOURCEUPDATE))');
-    } catch (error) {
-        console.log("Table WEATHERBYPOSTALCODE already exists");
-    }
 
-    try {
-        conn.exec('CREATE TABLE WEATHERCONDITIONS(ID INTEGER, MAIN NVARCHAR(50), DESCRIPTION NVARCHAR(50), PRIMARY KEY (ID));');
-    } catch (error) {
-        console.log("Table WEATHERCONDITIONS already exists");
-    }
-    conn.disconnect();
-    */
     var cities = selectCities(conn_parms, conn);
     insertWeather(conn_parms, conn, await cities);
 }
